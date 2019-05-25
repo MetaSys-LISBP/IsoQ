@@ -1,0 +1,8 @@
+README.md
+IsoQ.egg-info/PKG-INFO
+IsoQ.egg-info/SOURCES.txt
+IsoQ.egg-info/dependency_links.txt
+IsoQ.egg-info/requires.txt
+IsoQ.egg-info/top_level.txt
+isoq/__init__.py
+isoq/process.py
