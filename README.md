@@ -14,27 +14,32 @@ The code is open-source, and available under a GPLv3 license.
 ## Quick-start
 IsoQ requires Python 3.5 or higher and run on all plate-forms.
 
-To install IsoQ locally, download the github repository and run:
+To install IsoQ locally, run:
 
 ```bash
-$ pip install -e /path/to/IsoQ/
+$ pip install git+https://github.com/MetaSys-LISBP/IsoQ.git
 ```
 
-An example of IsoQ usage is provided in '*isoq/data/*'.
+Alternatively, you can download the github repository and run:
+
+```bash
+$ pip install /path/to/IsoQ/
+```
+
+An example of IsoQ usage is provided in '*/isoq/data/example_process.py*'.
 
 ## Bug and feature requests
 If you have an idea on how we could improve IsoQ please submit a new *issue*
 to [our GitHub issue tracker](https://github.com/MetaSys-LISBP/IsoQ/issues).
 
-## Developers guide
-### Contributions
+## Contributions
 Contributions are very welcome! :heart:
 
 Please work on your own fork and
 follow [PEP8](https://www.python.org/dev/peps/pep-0008/) style guide.
 
 ## How to cite
-*ref*
+*in preparation*
 
 ## Authors
 Pierre Millard, Baudoin Delépine 
