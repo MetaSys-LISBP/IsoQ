@@ -20,6 +20,8 @@ To install IsoQ locally, download the github repository and run:
 $ pip install -e /path/to/IsoQ/
 ```
 
+An example of IsoQ usage is provided in '*isoq/data/*'.
+
 ## Bug and feature requests
 If you have an idea on how we could improve IsoQ please submit a new *issue*
 to [our GitHub issue tracker](https://github.com/MetaSys-LISBP/IsoQ/issues).
