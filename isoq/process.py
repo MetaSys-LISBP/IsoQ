@@ -87,9 +87,8 @@ class run():
         self.pp = PdfPages(str(Path(folder, 'results.pdf')))
         for metabolite in cal_data.keys():
             datam = pd.DataFrame(cal_data[metabolite])
-            if not datam.isnull().values.any():
-                cal_data[metabolite] = self.runCalib(datam)
-                self.plotCalib(cal_data[metabolite], metabolite)
+            cal_data[metabolite] = self.runCalib(datam)
+            self.plotCalib(cal_data[metabolite], metabolite)
         self.pp.close()
 
         # process measurements
@@ -105,7 +104,7 @@ class run():
                 isoclust = self.getIsoclust(stp, metabolite)
                 isostandard = self.getIS(stp, metabolite)
                 self.logger.info("*********")
-                self.display("  sample, metabolite: ({}, {})".format(sample, metabolite))
+                self.display("  sample, metabolite, mode: ({}, {}, {})".format(sample, metabolite, cal_data[metabolite]['mode']))
                 self.logger.info("mass fractions (area): {}".format(isoclust))
                 self.logger.info("13C15N-internal standard (area): {}".format(isostandard))
                 try:
@@ -131,8 +130,8 @@ class run():
                     else:
                         CID_area = sum(isoclust)
                         self.logger.info("total CID area (no IS found): {}".format(CID_area))
-                        #pool = cal_data[metabolite]['sim_fun'](CID_area)
-                        pool = CID_area
+                        pool = cal_data[metabolite]['sim_fun'](CID_area)
+                        #pool = CID_area
                         df_met['type'][metabolite] = "area"
                         df_met['comment'][metabolite] = ""
                         self.logger.info("pool (using calibration with total CID area, no IS found): {}".format(CID_area))
@@ -154,6 +153,9 @@ class run():
         self.display('done')
 
     def display(self, m):
+        """
+        Send message to logs and 
+        """
         self.logger.info(m)
         print(m)
         
@@ -194,7 +196,7 @@ class run():
             try:
                 corrected = isoclust - self.exp_CID_IS*isostandard
             except:
-                raise ValueError('Experimental CID of IS does not comply with requirements (e.g. same length as isotopic cluster).')
+                raise ValueError('Experimental CID of IS does not comply with requirements (e.g. same length as mass fractions vector).')
         elif self.purity15N:
             contrib = [1.]
             for _ in range(nN):
@@ -211,13 +213,27 @@ class run():
     def runCalib(self, datam):
         res = {}
         res['x'] = datam['concentration']
-        res['y'] = datam['CID_area']/datam['IS_area']
-        fres = np.polyfit(res['x'], res['y'], 2, w=1/res['x'])
-        r2 = round(np.corrcoef(res['x'], res['y'])[0,1]**2, 3)
-        res['r2'] = r2
-        res['coeffs'] = fres
-        res['sim_fun'] = np.poly1d(fres)
-        res['relative_residuals'] = (res['sim_fun'](res['x'])-res['y'])/res['y']
+        if np.all(np.isnan(datam['CID_area'])) or np.all(np.isnan(datam['concentration'])) or datam['CID_area'].isnull().values.all() or datam['concentration'].isnull().values.all():
+            res['mode'] = 'area'
+            res['y'] = np.nan
+            res['r2'] = np.nan
+            res['coeffs'] = np.nan
+            res['sim_fun'] = lambda x: x
+            res['relative_residuals'] = np.nan
+        else:
+            if np.all(np.isnan(datam['IS_area'])):
+                res['y'] = datam['CID_area']
+                res['mode'] = '12C'
+            else:
+                res['y'] = datam['CID_area']/datam['IS_area']
+                res['mode'] = 'IS'
+            idx = np.isfinite(res['x']) & np.isfinite(res['y'])
+            fres = np.polyfit(res['x'][idx], res['y'][idx], 2, w=1/res['x'])
+            r2 = round(np.corrcoef(res['x'][idx], res['y'][idx])[0,1]**2, 3)
+            res['r2'] = r2
+            res['coeffs'] = fres
+            res['sim_fun'] = np.poly1d(fres)
+            res['relative_residuals'] = (res['sim_fun'](res['x'][idx])-res['y'][idx])/res['y'][idx]
         return res
 
     def plotCalib(self, res, metabolite):
@@ -225,18 +241,19 @@ class run():
         plt.suptitle(metabolite + " (R2 = " + str(res['r2']) + ")")
         
         plt.subplot(211)
-        xp = np.linspace(0, max(res['x']), 100)
-        _ = plt.plot(res['x'], res['y'], '.', xp, res['sim_fun'](xp), '-')
-        plt.set_ylabel = "fit"
-        plt.grid(True)
+        if res['mode'] != 'area':
+            xp = np.linspace(0, max(res['x']), 100)
+            _ = plt.plot(res['x'], res['y'], '.', xp, res['sim_fun'](xp), '-')
+            plt.set_ylabel = "fit"
+            plt.grid(True)
             
-        plt.subplot(212)
-        _ = plt.plot(res['x'], res['relative_residuals'], '.')
-        plt.ylim(min(-0.25, min(res['relative_residuals'])*1.1), max(0.25, max(res['relative_residuals'])*1.1))
-        plt.set_ylabel = "residuals"
-        plt.grid(True)
-        plt.axhline(y=-0.2, color='r', linestyle='-')
-        plt.axhline(y=0.2, color='r', linestyle='-')
+            plt.subplot(212)
+            _ = plt.plot(res['x'], res['relative_residuals'], '.')
+            plt.ylim(min(-0.25, min(res['relative_residuals'])*1.1), max(0.25, max(res['relative_residuals'])*1.1))
+            plt.set_ylabel = "residuals"
+            plt.grid(True)
+            plt.axhline(y=-0.2, color='r', linestyle='-')
+            plt.axhline(y=0.2, color='r', linestyle='-')
         plt.savefig(self.pp, format='pdf')
         plt.close()
 
