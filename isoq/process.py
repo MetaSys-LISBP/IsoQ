@@ -36,7 +36,7 @@ class run():
         self.logger.info('GENERAL INFORMATION')
         self.logger.info('------------------------------------------------')
         self.logger.info('IsoQ version: {}'.format(isoq.__version__))
-        self.logger.info('15N-purity  of 13C15N-internal standard: {}'.format(purity15N))
+        self.logger.info('15N-purity of 13C15N-internal standard: {}'.format(purity15N))
         self.purity15N = purity15N
         self.logger.info('exp. CID of 13C15N-internal standard: {}'.format(exp_CID_IS))
         self.exp_CID_IS = exp_CID_IS
@@ -87,7 +87,7 @@ class run():
         self.pp = PdfPages(str(Path(folder, 'results.pdf')))
         for metabolite in cal_data.keys():
             datam = pd.DataFrame(cal_data[metabolite])
-            cal_data[metabolite] = self.runCalib(datam)
+            cal_data[metabolite] = self.runCalib(cal_data, metabolite)
             self.plotCalib(cal_data[metabolite], metabolite)
         self.pp.close()
 
@@ -116,22 +116,32 @@ class run():
                                 correct_NA_tracer=correct_NA_tracer, resolution_formula_code=resolution_formula_code,
                                 charge=baseenv.getMetaboliteCharge(metabolite))
                     self.logger.debug("remove contribution of IS to CID")
-                    isoclustCorIS = self.removeIScontribution(isoclust, isostandard, corrector)
+                    if len(isostandard):
+                        isoclustCorIS = self.removeIScontribution(isoclust, isostandard, corrector)
+                        #print(1)
+                    else:
+                        isoclustCorIS = [isoclust, False]
+                        #print(2)
                     self.logger.debug("correct for naturally occuring isotopes")
-                    CID, _, _, _ = corrector.correct(isoclustCorIS[0])
+                    _, CID, _, _ = corrector.correct(isoclustCorIS[0])
                     tmp = isostandard
                     if len(tmp) == 1 and tmp:
                         CID_IS_ratio = sum(isoclust)/isostandard[0]
                         self.logger.info("total CID area / IS area: {}".format(CID_IS_ratio))
-                        pool = cal_data[metabolite]['sim_fun'](CID_IS_ratio)
+                        pool = self.getConc(cal_data[metabolite]['sim_fun'], CID_IS_ratio, cal_data[metabolite]['xlim'])
                         df_met['type'][metabolite] = "IS_ratio"
                         df_met['comment'][metabolite] = ""
                         self.logger.info("calc. concentration: {}".format(pool))
+                        #print(3)
                     else:
                         CID_area = sum(isoclust)
                         self.logger.info("total CID area (no IS found): {}".format(CID_area))
-                        pool = cal_data[metabolite]['sim_fun'](CID_area)
-                        #pool = CID_area
+                        if cal_data[metabolite]['mode'] == '12C':
+                            pool = self.getConc(cal_data[metabolite]['sim_fun'], CID_area, cal_data[metabolite]['xlim'])
+                            #print(4)
+                        else:
+                            pool = CID_area
+                            #print(5)
                         df_met['type'][metabolite] = "area"
                         df_met['comment'][metabolite] = ""
                         self.logger.info("pool (using calibration with total CID area, no IS found): {}".format(CID_area))
@@ -139,9 +149,13 @@ class run():
                     self.logger.info("Error: {}".format(err))
                     df_met['comment'][metabolite] = err
                     pool = np.nan
+                    isoclustCorIS = ([np.nan], None)
 
                 # gather results
                 df_met[sample][metabolite] = pool
+                self.logger.debug(isoclust)
+                self.logger.debug(CID)
+                self.logger.debug(isoclustCorIS)
                 for i, line in enumerate(zip(*(isoclust, isoclustCorIS[0], CID))):
                     df_iso = pd.concat((df_iso, pd.DataFrame([line], index=pd.MultiIndex.from_tuples([[sample, metabolite, i]], names=[
                         'sample', 'metabolite', 'isotopologue']), columns=['area', 'MF_corrected_IS', 'CID'])))
@@ -152,9 +166,21 @@ class run():
         pd.DataFrame.from_dict(df_met).to_csv(str(Path(folder, 'results_conc.csv')), sep='\t')
         self.display('done')
 
+    def getConc(self, fun, y, xlim):
+        if not np.isfinite(y):
+            return 'Error: exp. value ({}) must be a number.'.format(y)
+        intconc = (fun - y).roots
+        conc = [intconc[i] for i in range(len(intconc)) if xlim[0] <= intconc[i] <= xlim[1]]
+        if len(conc) == 1:
+            return conc[0]
+        elif len(conc) == 0:
+            return 'Error: out of calibration range ({}).'.format(xlim)
+        else:
+            return 'Error: invalid calibration curve, several values are returned ({}).'.format(conc)
+
     def display(self, m):
         """
-        Send message to logs and 
+        Send message to logs and display message
         """
         self.logger.info(m)
         print(m)
@@ -210,8 +236,9 @@ class run():
             corrected[corrected < 0] = 0
         return corrected, warning
         
-    def runCalib(self, datam):
+    def runCalib(self, cal_data, metabolite):
         res = {}
+        datam = pd.DataFrame(cal_data[metabolite])
         res['x'] = datam['concentration']
         if np.all(np.isnan(datam['CID_area'])) or np.all(np.isnan(datam['concentration'])) or datam['CID_area'].isnull().values.all() or datam['concentration'].isnull().values.all():
             res['mode'] = 'area'
@@ -228,12 +255,18 @@ class run():
                 res['y'] = datam['CID_area']/datam['IS_area']
                 res['mode'] = 'IS'
             idx = np.isfinite(res['x']) & np.isfinite(res['y'])
-            fres = np.polyfit(res['x'][idx], res['y'][idx], 2, w=1/res['x'])
+            res['xlim'] = [min(res['x'][idx]), max(res['x'][idx])]
+            fres = np.polyfit(res['x'][idx], res['y'][idx], 2, w=1/res['x'][idx])
+            #fres = np.polyfit(res['y'][idx], res['x'][idx], 2, w=1/res['y'][idx])
+            #fres = np.polyfit(res['x'], res['y'], 2, w=1/res['x'])
             r2 = round(np.corrcoef(res['x'][idx], res['y'][idx])[0,1]**2, 3)
             res['r2'] = r2
             res['coeffs'] = fres
             res['sim_fun'] = np.poly1d(fres)
             res['relative_residuals'] = (res['sim_fun'](res['x'][idx])-res['y'][idx])/res['y'][idx]
+        #print(res)
+        self.logger.info('Calibration results - ' + metabolite)
+        self.logger.info(res)
         return res
 
     def plotCalib(self, res, metabolite):

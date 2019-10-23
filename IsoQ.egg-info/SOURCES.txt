@@ -1,4 +1,5 @@
 README.md
+setup.py
 IsoQ.egg-info/PKG-INFO
 IsoQ.egg-info/SOURCES.txt
 IsoQ.egg-info/dependency_links.txt

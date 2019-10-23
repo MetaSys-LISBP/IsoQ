@@ -8,7 +8,7 @@ setuptools.setup(
     version="0.1",
     author="Pierre Millard, Baudoin Delépine",
     author_email="millard@insa-toulouse.fr",
-    description="Automated processing of isotopic and metabolomics data",
+    description="Automated processing of single-experiment isotopic and metabolomics measurements",
     long_description=long_description,
     long_description_content_type="text/markdown",
     url="https://github.com/MetaSys-LISBP/IsoQ/",
