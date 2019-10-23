@@ -40,6 +40,10 @@ class run():
         self.purity15N = purity15N
         self.logger.info('exp. CID of 13C15N-internal standard: {}'.format(exp_CID_IS))
         self.exp_CID_IS = exp_CID_IS
+        # maximal relative error allowed when constructing calibration curves (samples above this threeshold are removed)
+        self.max_error = 0.2
+        # minimum number of calibration points to keep
+        self.min_cal_points = 5
         
         # create isocor environment
         self.display('create isocor environment...')
@@ -86,9 +90,7 @@ class run():
         cal_data = self.parseCalib()
         self.pp = PdfPages(str(Path(folder, 'results.pdf')))
         for metabolite in cal_data.keys():
-            datam = pd.DataFrame(cal_data[metabolite])
-            cal_data[metabolite] = self.runCalib(cal_data, metabolite)
-            self.plotCalib(cal_data[metabolite], metabolite)
+            cal_data[metabolite] = self.runCalib(cal_data, metabolite, 1, [])
         self.pp.close()
 
         # process measurements
@@ -236,9 +238,10 @@ class run():
             corrected[corrected < 0] = 0
         return corrected, warning
         
-    def runCalib(self, cal_data, metabolite):
+    def runCalib(self, cal_data, metabolite, npass, iexcluded):
         res = {}
         datam = pd.DataFrame(cal_data[metabolite])
+        datam = datam.drop(index=iexcluded)
         res['x'] = datam['concentration']
         if np.all(np.isnan(datam['CID_area'])) or np.all(np.isnan(datam['concentration'])) or datam['CID_area'].isnull().values.all() or datam['concentration'].isnull().values.all():
             res['mode'] = 'area'
@@ -256,39 +259,56 @@ class run():
                 res['mode'] = 'IS'
             idx = np.isfinite(res['x']) & np.isfinite(res['y'])
             res['xlim'] = [min(res['x'][idx]), max(res['x'][idx])]
-            fres = np.polyfit(res['x'][idx], res['y'][idx], 2, w=1/res['x'][idx])
-            #fres = np.polyfit(res['y'][idx], res['x'][idx], 2, w=1/res['y'][idx])
-            #fres = np.polyfit(res['x'], res['y'], 2, w=1/res['x'])
+            # if you prefer to use the polyfit function (np doc suggests using Polynomial.fit for numerical stability):
+            #fres = np.polyfit(res['x'][idx], res['y'][idx], 2, w=1/res['x'][idx])
+            # Note: fres obj must replace 'coe' and must be passed directly to poly1d (coefficients must not be reversed!!)
+            fres = np.polynomial.polynomial.Polynomial.fit(res['x'][idx], res['y'][idx], 2, w=1/res['x'][idx])
             r2 = round(np.corrcoef(res['x'][idx], res['y'][idx])[0,1]**2, 3)
             res['r2'] = r2
-            res['coeffs'] = fres
-            res['sim_fun'] = np.poly1d(fres)
+            coe = list(fres.convert().coef)
+            coe.reverse()
+            res['coeffs'] = coe
+            res['sim_fun'] = np.poly1d(coe)
             res['relative_residuals'] = (res['sim_fun'](res['x'][idx])-res['y'][idx])/res['y'][idx]
-        #print(res)
-        self.logger.info('Calibration results - ' + metabolite)
+        self.logger.info('{} - pass {}'.format(metabolite, npass))
         self.logger.info(res)
+        self.plotCalib(res, metabolite, npass, iexcluded)
+        # run another calibration pass excluding the calibration sample which show the highest error, if > 20%
+        if isinstance(res['relative_residuals'], pd.Series):
+            tmp = list(abs(res['relative_residuals']))
+            excluded = tmp.index(max(tmp)) if max(tmp) > self.max_error else None
+            if excluded is not None and len(res['relative_residuals']) > self.min_cal_points:
+                iexcluded.append(list(datam.index)[excluded])
+                res = self.runCalib(cal_data, metabolite, npass+1, iexcluded)
         return res
 
-    def plotCalib(self, res, metabolite):
+    def plotCalib(self, res, metabolite, npass, iexcluded):
         plt.figure(1)
-        plt.suptitle(metabolite + " (R2 = " + str(res['r2']) + ")")
-        
-        plt.subplot(211)
-        if res['mode'] != 'area':
-            xp = np.linspace(0, max(res['x']), 100)
-            _ = plt.plot(res['x'], res['y'], '.', xp, res['sim_fun'](xp), '-')
-            plt.set_ylabel = "fit"
-            plt.grid(True)
-            
-            plt.subplot(212)
-            _ = plt.plot(res['x'], res['relative_residuals'], '.')
-            plt.ylim(min(-0.25, min(res['relative_residuals'])*1.1), max(0.25, max(res['relative_residuals'])*1.1))
-            plt.set_ylabel = "residuals"
-            plt.grid(True)
-            plt.axhline(y=-0.2, color='r', linestyle='-')
-            plt.axhline(y=0.2, color='r', linestyle='-')
-        plt.savefig(self.pp, format='pdf')
-        plt.close()
+        if 'r2' in res.keys():
+            if np.isnan(res['r2']):
+                stitle = '{} - no calibration data'.format(metabolite)
+            else:
+                stitle = '{} (pass {}, R² = {}'.format(metabolite, npass, res['r2'])
+                if len(iexcluded):
+                    stitle += ', excluding cal. sample #{}'.format(iexcluded[-1]+1)
+                stitle += ')'
+            plt.suptitle(stitle)
+            plt.subplot(211)
+            if res['mode'] != 'area':
+                xp = np.linspace(0, max(res['x']), 100)
+                _ = plt.plot(res['x'], res['y'], '.', xp, res['sim_fun'](xp), '-')
+                plt.set_ylabel = "fit"
+                plt.grid(True)
+                
+                plt.subplot(212)
+                _ = plt.plot(res['x'], res['relative_residuals'], '.')
+                plt.ylim(min(-0.25, min(res['relative_residuals'])*1.1), max(0.25, max(res['relative_residuals'])*1.1))
+                plt.set_ylabel = "residuals"
+                plt.grid(True)
+                plt.axhline(y=-0.2, color='r', linestyle='-')
+                plt.axhline(y=0.2, color='r', linestyle='-')
+            plt.savefig(self.pp, format='pdf')
+            plt.close()
 
     def parseCalib(self):
         cal_data = {}
