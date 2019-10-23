@@ -11,11 +11,11 @@ folder = "C:/Users/millard/Documents/GIT/IsoQ/IsoQ/isoq/data/"
 tracer = '13C'
 resolution = 70000
 mz_of_resolution = 400
-tracer_purity = [0.01, 0.99] # can be None
-correct_NA_tracer = False
+tracer_purity = [0.01, 0.99] # purity vector, or None
+correct_NA_tracer = True
 resolution_formula_code = 'orbitrap'
 purity15N = [0.01, 0.99]
 
 # run processing
-iq.run(folder, datafile, calibfile, tracer, resolution, mz_of_resolution, tracer_purity, correct_NA_tracer, resolution_formula_code, purity15N=purity15N, verbose=True)
+iq.run(folder, datafile, calibfile, tracer, resolution, mz_of_resolution, tracer_purity, correct_NA_tracer, resolution_formula_code, purity15N=purity15N, verbose=False)
 

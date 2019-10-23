@@ -1,7 +1,7 @@
-# IsoQ - Single analysis for metabolomics and isotopic studies
+# IsoQ - Single-sample metabolomics and isotopic analysis
 
 ## What is IsoQ?
-**IsoCor is a scientific software dedicated to the automated processing of metabolomics and isotopic MS measurements**.
+**IsoQ is a scientific software dedicated to the automated processing of metabolomics and isotopic MS measurements**.
 IsoQ corrects raw MS data (mass fractions) for
 naturally-occurring isotopes of all elements and purity of the
 isotopic tracer using IsoCor, and calculates metabolite concentrations 
@@ -34,6 +34,8 @@ to [our GitHub issue tracker](https://github.com/MetaSys-LISBP/IsoQ/issues).
 
 ## Contributions
 Contributions are very welcome! :heart:
+
+In development mode, do a `pip install -e /path/to/IsoQ/` to install locally the development version.
 
 Please work on your own fork and
 follow [PEP8](https://www.python.org/dev/peps/pep-0008/) style guide.

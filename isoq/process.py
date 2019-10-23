@@ -18,6 +18,7 @@ class run():
         self.logger = logging.getLogger()
         formatter = logging.Formatter(
             '%(asctime)s - %(levelname)s - %(message)s', "%Y-%m-%d %H:%M:%S")
+
         # send logs to filehandler (to send logs to sys.stderr, use 'strm_hdlr = logging.StreamHandler()')
         strm_hdlr = logging.FileHandler(str(Path(folder, "results.log")), mode='w')
         strm_hdlr.setFormatter(formatter)
@@ -29,7 +30,6 @@ class run():
             self.logger.debug("Verbose mode.")
         else:
             self.logger.setLevel(logging.INFO)
- 
 
         # log general information on the process
         self.logger.info('------------------------------------------------')
@@ -40,6 +40,7 @@ class run():
         self.purity15N = purity15N
         self.logger.info('exp. CID of 13C15N-internal standard: {}'.format(exp_CID_IS))
         self.exp_CID_IS = exp_CID_IS
+
         # maximal relative error allowed when constructing calibration curves (samples above this threeshold are removed)
         self.max_error = 0.2
         # minimum number of calibration points to keep
@@ -125,7 +126,7 @@ class run():
                         isoclustCorIS = [isoclust, False]
                         #print(2)
                     self.logger.debug("correct for naturally occuring isotopes")
-                    _, CID, _, _ = corrector.correct(isoclustCorIS[0])
+                    _, CID, _, enr = corrector.correct(isoclustCorIS[0])
                     tmp = isostandard
                     if len(tmp) == 1 and tmp:
                         CID_IS_ratio = sum(isoclust)/isostandard[0]
@@ -138,7 +139,7 @@ class run():
                     else:
                         CID_area = sum(isoclust)
                         self.logger.info("total CID area (no IS found): {}".format(CID_area))
-                        if cal_data[metabolite]['mode'] == '12C':
+                        if cal_data[metabolite]['mode'] == '12C area':
                             pool = self.getConc(cal_data[metabolite]['sim_fun'], CID_area, cal_data[metabolite]['xlim'])
                             #print(4)
                         else:
@@ -158,9 +159,9 @@ class run():
                 self.logger.debug(isoclust)
                 self.logger.debug(CID)
                 self.logger.debug(isoclustCorIS)
-                for i, line in enumerate(zip(*(isoclust, isoclustCorIS[0], CID))):
+                for i, line in enumerate(zip(*(isoclust, isoclustCorIS[0], CID, [enr]*len(CID)))):
                     df_iso = pd.concat((df_iso, pd.DataFrame([line], index=pd.MultiIndex.from_tuples([[sample, metabolite, i]], names=[
-                        'sample', 'metabolite', 'isotopologue']), columns=['area', 'MF_corrected_IS', 'CID'])))
+                        'sample', 'metabolite', 'isotopologue']), columns=['area', 'MF_corrected_IS', 'CID', 'mean enrichment'])))
 
         # save results
         self.display('save results...')
@@ -182,7 +183,7 @@ class run():
 
     def display(self, m):
         """
-        Send message to logs and display message
+        Send message to logs and console
         """
         self.logger.info(m)
         print(m)
@@ -253,15 +254,15 @@ class run():
         else:
             if np.all(np.isnan(datam['IS_area'])):
                 res['y'] = datam['CID_area']
-                res['mode'] = '12C'
+                res['mode'] = '12C area'
             else:
                 res['y'] = datam['CID_area']/datam['IS_area']
-                res['mode'] = 'IS'
+                res['mode'] = '12C/13C ratio'
             idx = np.isfinite(res['x']) & np.isfinite(res['y'])
             res['xlim'] = [min(res['x'][idx]), max(res['x'][idx])]
             # if you prefer to use the polyfit function (np doc suggests using Polynomial.fit for numerical stability):
             #fres = np.polyfit(res['x'][idx], res['y'][idx], 2, w=1/res['x'][idx])
-            # Note: fres obj must replace 'coe' and must be passed directly to poly1d (coefficients must not be reversed!!)
+            # Note: 'fres' object must replace 'coe' and must be passed directly to poly1d (coefficients must not be reversed!!)
             fres = np.polynomial.polynomial.Polynomial.fit(res['x'][idx], res['y'][idx], 2, w=1/res['x'][idx])
             r2 = round(np.corrcoef(res['x'][idx], res['y'][idx])[0,1]**2, 3)
             res['r2'] = r2
@@ -293,22 +294,34 @@ class run():
                     stitle += ', excluding cal. sample #{}'.format(iexcluded[-1]+1)
                 stitle += ')'
             plt.suptitle(stitle)
-            plt.subplot(211)
             if res['mode'] != 'area':
+                plt.subplot(211)
                 xp = np.linspace(0, max(res['x']), 100)
                 _ = plt.plot(res['x'], res['y'], '.', xp, res['sim_fun'](xp), '-')
-                plt.set_ylabel = "fit"
+                plt.ylim(-max(res['y'])*0.05, max(res['y'])*1.05)
+                plt.xlim(-max(res['x'])*0.05, max(res['x'])*1.05)
+                yleg = max(res['y'])/2
+                xleg = -max(res['x'])*0.18
+                plt.text(xleg, yleg, res['mode'], horizontalalignment='center', verticalalignment='center', rotation=90)
                 plt.grid(True)
                 
                 plt.subplot(212)
                 _ = plt.plot(res['x'], res['relative_residuals'], '.')
                 plt.ylim(min(-0.25, min(res['relative_residuals'])*1.1), max(0.25, max(res['relative_residuals'])*1.1))
-                plt.set_ylabel = "residuals"
+                plt.xlim(-max(res['x'])*0.05, max(res['x'])*1.05)
+                yleg = min(-0.25, min(res['relative_residuals'])*1.1) - (max(0.25, max(res['relative_residuals'])*1.1) - min(-0.25, min(res['relative_residuals'])*1.1))*0.2
+                xleg = max(res['x'])/2
+                plt.text(xleg, yleg, 'concentration', horizontalalignment='center', verticalalignment='center')
+                yleg = max(0.25, max(res['relative_residuals'])*1.1) - (max(0.25, max(res['relative_residuals'])*1.1) - min(-0.25, min(res['relative_residuals'])*1.1))/2
+                xleg = -max(res['x'])*0.18
+                plt.text(xleg, yleg, 'relative error', horizontalalignment='center', verticalalignment='center', rotation=90)
                 plt.grid(True)
                 plt.axhline(y=-0.2, color='r', linestyle='-')
                 plt.axhline(y=0.2, color='r', linestyle='-')
             plt.savefig(self.pp, format='pdf')
             plt.close()
+        else:
+            self.logger.error("Cannot construct calibration curve for metabolite '{}'".format(metabolite))
 
     def parseCalib(self):
         cal_data = {}
