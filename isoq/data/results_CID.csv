@@ -1,4 +1,4 @@
-sample	metabolite	isotopologue	area	MF_corrected_IS	CID	mean enrichment
+sample	metabolite	isotopologue	area	area_corrected_IS	isotopologue_fraction	mean_enrichment
 050417_T18-EFF_M0_01_91	Alanine	0	4098117.0	4098117.0	1.0	0.0
 050417_T18-EFF_M0_01_91	Alanine	1	81595.0	81595.0	0.0	0.0
 050417_T18-EFF_M0_01_91	Alanine	2	0.0	0.0	0.0	0.0

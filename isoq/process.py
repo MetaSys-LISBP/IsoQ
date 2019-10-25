@@ -121,10 +121,8 @@ class run():
                     self.logger.debug("remove contribution of IS to CID")
                     if len(isostandard):
                         isoclustCorIS = self.removeIScontribution(isoclust, isostandard, corrector)
-                        #print(1)
                     else:
                         isoclustCorIS = [isoclust, False]
-                        #print(2)
                     self.logger.debug("correct for naturally occuring isotopes")
                     _, CID, _, enr = corrector.correct(isoclustCorIS[0])
                     tmp = isostandard
@@ -135,16 +133,13 @@ class run():
                         df_met['type'][metabolite] = "IS_ratio"
                         df_met['comment'][metabolite] = ""
                         self.logger.info("calc. concentration: {}".format(pool))
-                        #print(3)
                     else:
                         CID_area = sum(isoclust)
                         self.logger.info("total CID area (no IS found): {}".format(CID_area))
                         if cal_data[metabolite]['mode'] == '12C area':
                             pool = self.getConc(cal_data[metabolite]['sim_fun'], CID_area, cal_data[metabolite]['xlim'])
-                            #print(4)
                         else:
                             pool = CID_area
-                            #print(5)
                         df_met['type'][metabolite] = "area"
                         df_met['comment'][metabolite] = ""
                         self.logger.info("pool (using calibration with total CID area, no IS found): {}".format(CID_area))
@@ -161,7 +156,7 @@ class run():
                 self.logger.debug(isoclustCorIS)
                 for i, line in enumerate(zip(*(isoclust, isoclustCorIS[0], CID, [enr]*len(CID)))):
                     df_iso = pd.concat((df_iso, pd.DataFrame([line], index=pd.MultiIndex.from_tuples([[sample, metabolite, i]], names=[
-                        'sample', 'metabolite', 'isotopologue']), columns=['area', 'MF_corrected_IS', 'CID', 'mean enrichment'])))
+                        'sample', 'metabolite', 'isotopologue']), columns=['area', 'area_corrected_IS', 'isotopologue_fraction', 'mean_enrichment'])))
 
         # save results
         self.display('save results...')
@@ -243,7 +238,7 @@ class run():
         res = {}
         datam = pd.DataFrame(cal_data[metabolite])
         if datam['CID_area'].isnull().values.all() or datam['concentration'].isnull().values.all() or datam['CID_area'].isnull().values.all() or datam['concentration'].isnull().values.all():
-            res['mode'] = 'area'
+            res['mode'] = 'no calibration'
             res['y'] = np.nan
             res['r2'] = np.nan
             res['coeffs'] = np.nan
@@ -251,12 +246,12 @@ class run():
             res['relative_residuals'] = np.nan
         else:
             if datam['IS_area'].isnull().values.all():
-                res['y'] = datam['CID_area']
+                y = datam['CID_area']
                 res['mode'] = '12C area'
             else:
-                res['y'] = datam['CID_area']/datam['IS_area']
+                y = datam['CID_area']/datam['IS_area']
                 res['mode'] = '12C/13C ratio'
-            datap = pd.concat([datam['concentration'], res['y']], axis=1, ignore_index=True).dropna()
+            datap = pd.concat([datam['concentration'], y], axis=1, ignore_index=True).dropna()
             datap = datap.drop(index=iexcluded)
             res['x'] = np.array(datap[0].tolist())
             res['y'] = np.array(datap[1].tolist())
@@ -295,7 +290,7 @@ class run():
                     stitle += ', excluding cal. sample #{}'.format(iexcluded[-1]+1)
                 stitle += ')'
             plt.suptitle(stitle)
-            if res['mode'] != 'area':
+            if res['mode'] != 'no calibration':
                 plt.subplot(211)
                 xp = np.linspace(0, max(res['x']), 100)
                 _ = plt.plot(res['x'], res['y'], '.', xp, res['sim_fun'](xp), '-')
@@ -308,17 +303,17 @@ class run():
                 
                 plt.subplot(212)
                 _ = plt.plot(res['x'], res['relative_residuals'], '.')
-                plt.ylim(min(-0.25, min(res['relative_residuals'])*1.1), max(0.25, max(res['relative_residuals'])*1.1))
+                plt.ylim(min(-self.max_error*1.25, min(res['relative_residuals'])*1.1), max(self.max_error*1.25, max(res['relative_residuals'])*1.1))
                 plt.xlim(-max(res['x'])*0.05, max(res['x'])*1.05)
-                yleg = min(-0.25, min(res['relative_residuals'])*1.1) - (max(0.25, max(res['relative_residuals'])*1.1) - min(-0.25, min(res['relative_residuals'])*1.1))*0.2
+                yleg = min(-self.max_error*1.25, min(res['relative_residuals'])*1.1) - (max(self.max_error*1.25, max(res['relative_residuals'])*1.1) - min(-self.max_error*1.25, min(res['relative_residuals'])*1.1))*0.2
                 xleg = max(res['x'])/2
                 plt.text(xleg, yleg, 'concentration', horizontalalignment='center', verticalalignment='center')
-                yleg = max(0.25, max(res['relative_residuals'])*1.1) - (max(0.25, max(res['relative_residuals'])*1.1) - min(-0.25, min(res['relative_residuals'])*1.1))/2
+                yleg = max(self.max_error*1.25, max(res['relative_residuals'])*1.1) - (max(self.max_error*1.25, max(res['relative_residuals'])*1.1) - min(-self.max_error*1.25, min(res['relative_residuals'])*1.1))/2
                 xleg = -max(res['x'])*0.18
                 plt.text(xleg, yleg, 'relative error', horizontalalignment='center', verticalalignment='center', rotation=90)
                 plt.grid(True)
-                plt.axhline(y=-0.2, color='r', linestyle='-')
-                plt.axhline(y=0.2, color='r', linestyle='-')
+                plt.axhline(y=-self.max_error, color='r', linestyle='-')
+                plt.axhline(y=self.max_error, color='r', linestyle='-')
             plt.savefig(self.pp, format='pdf')
             plt.close()
         else:
@@ -348,9 +343,5 @@ class run():
                 except:
                     cal_data[metabolite]['concentration'].append(np.nan)
         return cal_data
-
-
-
-
 
 
