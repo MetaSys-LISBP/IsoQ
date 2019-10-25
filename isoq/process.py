@@ -74,8 +74,8 @@ class run():
                 "Calibration file not found in:\n'{}'.".format(calibfile))
         try:
             with open(str(calibfile), 'r', encoding='utf-8') as fp:
-                self.dfCalibfile = pd.read_csv(fp, delimiter='\t', keep_default_na=False)
-            self.dfCalibfile = self.dfCalibfile.replace("N/F", 0)
+                self.dfCalibfile = pd.read_csv(fp, delimiter='\t', keep_default_na=False, na_values = "N/F")
+            #self.dfCalibfile = self.dfCalibfile.replace("N/F", 0)
         except Exception as err:
             raise ValueError("An unknown error has occurred opening the calibration file ('{}').\n\nPlease check this file (details on the expected format can be found in the documentation), correct the issue and rerun IsoQ.\n\nTraceback for debugging:\n{}".format(calibfile, err))
         self.logger.info('calibration file: {}'.format(calibfile))
@@ -242,9 +242,7 @@ class run():
     def runCalib(self, cal_data, metabolite, npass, iexcluded):
         res = {}
         datam = pd.DataFrame(cal_data[metabolite])
-        datam = datam.drop(index=iexcluded)
-        res['x'] = datam['concentration']
-        if np.all(np.isnan(datam['CID_area'])) or np.all(np.isnan(datam['concentration'])) or datam['CID_area'].isnull().values.all() or datam['concentration'].isnull().values.all():
+        if datam['CID_area'].isnull().values.all() or datam['concentration'].isnull().values.all() or datam['CID_area'].isnull().values.all() or datam['concentration'].isnull().values.all():
             res['mode'] = 'area'
             res['y'] = np.nan
             res['r2'] = np.nan
@@ -252,34 +250,37 @@ class run():
             res['sim_fun'] = lambda x: x
             res['relative_residuals'] = np.nan
         else:
-            if np.all(np.isnan(datam['IS_area'])):
+            if datam['IS_area'].isnull().values.all():
                 res['y'] = datam['CID_area']
                 res['mode'] = '12C area'
             else:
                 res['y'] = datam['CID_area']/datam['IS_area']
                 res['mode'] = '12C/13C ratio'
-            idx = np.isfinite(res['x']) & np.isfinite(res['y'])
-            res['xlim'] = [min(res['x'][idx]), max(res['x'][idx])]
+            datap = pd.concat([datam['concentration'], res['y']], axis=1, ignore_index=True).dropna()
+            datap = datap.drop(index=iexcluded)
+            res['x'] = np.array(datap[0].tolist())
+            res['y'] = np.array(datap[1].tolist())
+            res['xlim'] = [min(res['x']), max(res['x'])]
             # if you prefer to use the polyfit function (np doc suggests using Polynomial.fit for numerical stability):
             #fres = np.polyfit(res['x'][idx], res['y'][idx], 2, w=1/res['x'][idx])
             # Note: 'fres' object must replace 'coe' and must be passed directly to poly1d (coefficients must not be reversed!!)
-            fres = np.polynomial.polynomial.Polynomial.fit(res['x'][idx], res['y'][idx], 2, w=1/res['x'][idx])
-            r2 = round(np.corrcoef(res['x'][idx], res['y'][idx])[0,1]**2, 3)
+            fres = np.polynomial.polynomial.Polynomial.fit(res['x'], res['y'], 2, w=1.0/res['x'])
+            r2 = round(np.corrcoef(res['x'], res['y'])[0,1]**2, 3)
             res['r2'] = r2
             coe = list(fres.convert().coef)
             coe.reverse()
             res['coeffs'] = coe
             res['sim_fun'] = np.poly1d(coe)
-            res['relative_residuals'] = (res['sim_fun'](res['x'][idx])-res['y'][idx])/res['y'][idx]
+            res['relative_residuals'] = (res['sim_fun'](res['x'])-res['y'])/res['y']
         self.logger.info('{} - pass {}'.format(metabolite, npass))
         self.logger.info(res)
         self.plotCalib(res, metabolite, npass, iexcluded)
         # run another calibration pass excluding the calibration sample which show the highest error, if > 20%
-        if isinstance(res['relative_residuals'], pd.Series):
+        if isinstance(res['relative_residuals'], np.ndarray):
             tmp = list(abs(res['relative_residuals']))
             excluded = tmp.index(max(tmp)) if max(tmp) > self.max_error else None
             if excluded is not None and len(res['relative_residuals']) > self.min_cal_points:
-                iexcluded.append(list(datam.index)[excluded])
+                iexcluded.append(list(datap.index)[excluded])
                 res = self.runCalib(cal_data, metabolite, npass+1, iexcluded)
         return res
 
