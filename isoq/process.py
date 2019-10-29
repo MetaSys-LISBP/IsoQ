@@ -168,6 +168,7 @@ class run():
         if not np.isfinite(y):
             return 'Error: exp. value ({}) must be a number.'.format(y)
         intconc = (fun - y).roots
+        self.logger.info('polynomial roots: {}'.format(intconc))
         conc = [intconc[i] for i in range(len(intconc)) if xlim[0] <= intconc[i] <= xlim[1]]
         if len(conc) == 1:
             return conc[0]
@@ -239,6 +240,8 @@ class run():
         datam = pd.DataFrame(cal_data[metabolite])
         if datam['CID_area'].isnull().values.all() or datam['concentration'].isnull().values.all() or datam['CID_area'].isnull().values.all() or datam['concentration'].isnull().values.all():
             res['mode'] = 'no calibration'
+            res['x'] = np.nan
+            res['xlim'] = np.nan
             res['y'] = np.nan
             res['r2'] = np.nan
             res['coeffs'] = np.nan
@@ -268,7 +271,14 @@ class run():
             res['sim_fun'] = np.poly1d(coe)
             res['relative_residuals'] = (res['sim_fun'](res['x'])-res['y'])/res['y']
         self.logger.info('{} - pass {}'.format(metabolite, npass))
-        self.logger.info(res)
+        self.logger.info('mode: {}'.format(res['mode']))
+        self.logger.info('concentrations: {}'.format(res['x']))
+        self.logger.info('{}: {}'.format(res['mode'], res['y']))
+        self.logger.info('calibration range: {}'.format(res['xlim']))
+        self.logger.info('polynomial coefficients: {}'.format(res['coeffs']))
+        self.logger.info('R2: {}'.format(res['r2']))
+        self.logger.info('best fit: {}'.format(res['sim_fun'](res['x'])))
+        self.logger.info('relative errors: {}'.format(res['relative_residuals']))
         self.plotCalib(res, metabolite, npass, iexcluded)
         # run another calibration pass excluding the calibration sample which show the highest error, if > 20%
         if isinstance(res['relative_residuals'], np.ndarray):
