@@ -69,23 +69,23 @@ Then, process your data by running the following command:
 
 ```python
 > iq.run(data_folder,
-> datafile,
-> calibfile,
-> tracer,
-> resolution,
-> mz_of_resolution,
-> tracer_purity,
-> correct_NA_tracer,
-> resolution_formula_code,
-> purity15N=purity15N,
-> verbose=False)
+>        datafile,
+>        calibfile,
+>        tracer,
+>        resolution,
+>        mz_of_resolution,
+>        tracer_purity,
+>        correct_NA_tracer,
+>        resolution_formula_code,
+>        purity15N=purity15N,
+>        verbose=False)
 ```
 
 The following information are saved in the data directory:
 
 - `results.pdf`: contains the calibration results (calibration curves, R², relative residuals, etc)
 - `results_CID.csv`: contains the isotopic data (carbon isotopologue distributions, mean enrichment, residuum, etc) as detailed in IsoCor documentation
-- `results_conc.csv`: contains metabolite concentrations
+- `results_conc.csv`: contains the calculated metabolite concentrations
 - `results.log`: contains detailed information about the processing (correction parameters, warnings and errors that may occur during processing, etc)
 
 ## Bug and feature requests
@@ -101,7 +101,10 @@ Please work on your own fork and
 follow [PEP8](https://www.python.org/dev/peps/pep-0008/) style guide.
 
 ## How to cite
-*in preparation*
+
+
+Heuillet M., Millard P., Cissé M., Guionnet M., Linares L., Létisse F., Le Cam L., Portais J.-C. and Bellvert F. Simultaneous measurement of absolute metabolite concentration and isotope incorporation by mass spectrometry. Submitted.
+
 
 ## Authors
 Pierre Millard, Baudoin Delépine 
