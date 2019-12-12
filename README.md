@@ -66,17 +66,18 @@ Processing parameters
 Then, process your data by running the following command:
 
 ```python
-> iq.run(data_folder,
->        datafile,
->        calibfile,
->        tracer,
->        resolution,
->        mz_of_resolution,
->        tracer_purity,
->        correct_NA_tracer,
->        resolution_formula_code,
->        purity15N=purity15N,
->        verbose=False)
+> iq.run(data_folder, # data directory (str)
+>        datafile, # name of the file containing the samples data (str)
+>        calibfile, # name of the file containing the calibration data (str)
+>        tracer, # isotopic tracer (str)
+>        resolution, # resolution of the MS spectrometer (float)
+>        mz_of_resolution, # m/z at which the resolution is given (float)
+>        tracer_purity, # isotopic purity of the tracer (vector)
+>        correct_NA_tracer, # correct (or not) for natural abundance of the tracer element (boolean)
+>        resolution_formula_code, # formula to calculate resolution on the MS instrument (str)
+>        purity15N=purity15N, # 15N purity of the 13C15N-IS (vector)
+>        verbose=False # verbose output (boolean)
+>        )
 ```
 
 The following information are saved in the data directory:
