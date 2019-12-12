@@ -9,6 +9,13 @@ from calibration curves.
 
 It is one of the routine tools that we use at the [MetaSys team](http://www.lisbp.fr/en/research/molecular-physiology-and-metabolism/metasys.html) and [MetaToul platform](http://www.metatoul.fr) in isotopic studies of metabolic systems.
 
+Additional information can be found in the following [publication](https://doi.org/SUBMITTED):
+
+Simultaneous measurement of absolute metabolite concentration and isotope incorporation by mass spectrometry,
+
+by Maud Heuillet, Pierre Millard, Madi Cissé, Matthieu Guionnet, Laetitia Linares, Fabien Létisse, Laurent Le Cam, Jean-Charles Portais and Floriant Bellvert.
+
+
 The code is open-source, and available under a GPLv3 license.
 
 ## Installation
@@ -26,7 +33,7 @@ Alternatively, you can download the github repository and run:
 $ pip install /path/to/IsoQ/
 ```
 
-An example of IsoQ usage is provided below and in '*/isoq/data/example_process.py*'.
+An example of IsoQ usage is provided below and in `*/isoq/data/example_process.py*`.
 
 ## Usage
 
@@ -76,10 +83,10 @@ verbose=False)
 
 The following information are saved in the data directory:
 
-- 'results.pdf': contains the calibration results (calibration curves, R², relative residuals, etc)
-- 'results_CID.csv': contains the isotopic data (carbon isotopologue distributions, mean enrichment, residuum, etc) as detailed in IsoCor documentation
-- 'results_conc.csv': contains metabolite concentrations
-- 'results.log': contains detailed information about the processing (correction parameters, warnings and errors that may occur during processing, etc)
+- `results.pdf`: contains the calibration results (calibration curves, R², relative residuals, etc)
+- `results_CID.csv`: contains the isotopic data (carbon isotopologue distributions, mean enrichment, residuum, etc) as detailed in IsoCor documentation
+- `results_conc.csv`: contains metabolite concentrations
+- `results.log`: contains detailed information about the processing (correction parameters, warnings and errors that may occur during processing, etc)
 
 ## Bug and feature requests
 If you have an idea on how we could improve IsoQ please submit a new *issue*
