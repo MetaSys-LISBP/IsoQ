@@ -37,7 +37,7 @@ An example of IsoQ usage is provided below and in `*/isoq/data/example_process.p
 
 ## Usage
 
-First, load IsoQ in your Python session (IsoQ must be installed beforehand, as detailed here):
+First, load IsoQ in your Python session (IsoQ must be installed beforehand, as detailed above):
 
 ```python
 > import isoq.process as iq
