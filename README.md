@@ -17,9 +17,11 @@ Additional information can be found in the following [publication](https://doi.o
 The code is open-source, and available under a GPLv3 license.
 
 ## Installation
-IsoQ requires Python 3.5 or higher and run on all plate-forms.
+IsoQ requires Python 3.5 or higher and run on all plate-forms. If you do not have a Python environment
+configured on your computer, we recommend that you follow the instructions
+from `Anaconda <https://www.anaconda.com/download/>`_.
 
-To install IsoQ locally, run:
+To install IsoQ locally, open a terminal (e.g. run *Anaconda Prompt* if you have installed Anaconda) and type:
 
 ```bash
 $ pip install git+https://github.com/MetaSys-LISBP/IsoQ.git
