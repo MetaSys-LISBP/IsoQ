@@ -39,7 +39,9 @@ An example of IsoQ usage is provided below and in `*/isoq/data/example_process.p
 
 First, load IsoQ in your Python session (IsoQ must be installed beforehand, as detailed here):
 
-import isoq.process as iq
+```python
+> import isoq.process as iq
+```
 
 The processing of a dataset starts by defining some information relative to the dataset (e.g. data directory) as well as the processing parameters:
 
