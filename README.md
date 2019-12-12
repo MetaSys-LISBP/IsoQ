@@ -11,7 +11,7 @@ It is one of the routine tools that we use at the [MetaSys team](http://www.lisb
 
 The code is open-source, and available under a GPLv3 license.
 
-## Quick-start
+## Installation
 IsoQ requires Python 3.5 or higher and run on all plate-forms.
 
 To install IsoQ locally, run:
@@ -26,7 +26,60 @@ Alternatively, you can download the github repository and run:
 $ pip install /path/to/IsoQ/
 ```
 
-An example of IsoQ usage is provided in '*/isoq/data/example_process.py*'.
+An example of IsoQ usage is provided below and in '*/isoq/data/example_process.py*'.
+
+## Usage
+
+First, load IsoQ in your Python session (IsoQ must be installed beforehand, as detailed here):
+
+import isoq.process as iq
+
+The processing of a dataset starts by defining some information relative to the dataset (e.g. data directory) as well as the processing parameters:
+
+Data files
+```bash
+$ datafile = "example_dataset.csv"
+$ calibfile = "example_calibration.csv"
+$ data_folder = "C:/Users/millard/Documents/GIT/IsoQ/IsoQ/isoq/data/"
+```
+
+Processing parameters
+```bash
+$ # isotopic tracer
+$ tracer = '13C'
+$ # resolution of the MS instrument, m/z at which resolution is measured, and type of instrument (see IsoCor documentation for details)
+$ resolution = 70000
+$ mz_of_resolution = 400
+$ resolution_formula_code = 'orbitrap'
+$ # options relative to the purity of the isotopic tracer (see IsoCor documentation for details)
+$ tracer_purity = [0.01, 0.99]
+$ correct_NA_tracer = True
+$ # isotopic purity of the other isotope used in the IS
+$ purity15N = [0.01, 0.99]
+```
+
+Then, process your data by running the following command:
+
+```bash
+iq.run(data_folder,
+datafile,
+calibfile,
+tracer,
+resolution,
+mz_of_resolution,
+tracer_purity,
+correct_NA_tracer,
+resolution_formula_code,
+purity15N=purity15N,
+verbose=False)
+```
+
+The following information are saved in the data directory:
+
+- 'results.pdf': contains the calibration results (calibration curves, R², relative residuals, etc)
+- 'results_CID.csv': contains the isotopic data (carbon isotopologue distributions, mean enrichment, residuum, etc) as detailed in IsoCor documentation
+- 'results_conc.csv': contains metabolite concentrations
+- 'results.log': contains detailed information about the processing (correction parameters, warnings and errors that may occur during processing, etc)
 
 ## Bug and feature requests
 If you have an idea on how we could improve IsoQ please submit a new *issue*
