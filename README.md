@@ -11,9 +11,7 @@ It is one of the routine tools that we use at the [MetaSys team](http://www.lisb
 
 Additional information can be found in the following [publication](https://doi.org/SUBMITTED):
 
-Simultaneous measurement of absolute metabolite concentration and isotope incorporation by mass spectrometry,
-
-by Maud Heuillet, Pierre Millard, Madi Cissé, Matthieu Guionnet, Laetitia Linares, Fabien Létisse, Laurent Le Cam, Jean-Charles Portais and Floriant Bellvert.
+*Simultaneous measurement of absolute metabolite concentration and isotope incorporation by mass spectrometry*, by Maud Heuillet, Pierre Millard, Madi Cissé, Matthieu Guionnet, Laetitia Linares, Fabien Létisse, Laurent Le Cam, Jean-Charles Portais and Floriant Bellvert.
 
 
 The code is open-source, and available under a GPLv3 license.
