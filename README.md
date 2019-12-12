@@ -44,41 +44,41 @@ import isoq.process as iq
 The processing of a dataset starts by defining some information relative to the dataset (e.g. data directory) as well as the processing parameters:
 
 Data files
-```bash
-$ datafile = "example_dataset.csv"
-$ calibfile = "example_calibration.csv"
-$ data_folder = "C:/Users/millard/Documents/GIT/IsoQ/IsoQ/isoq/data/"
+```python
+> datafile = "example_dataset.csv"
+> calibfile = "example_calibration.csv"
+> data_folder = "C:/Users/millard/Documents/GIT/IsoQ/IsoQ/isoq/data/"
 ```
 
 Processing parameters
-```bash
-$ # isotopic tracer
-$ tracer = '13C'
-$ # resolution of the MS instrument, m/z at which resolution is measured, and type of instrument (see IsoCor documentation for details)
-$ resolution = 70000
-$ mz_of_resolution = 400
-$ resolution_formula_code = 'orbitrap'
-$ # options relative to the purity of the isotopic tracer (see IsoCor documentation for details)
-$ tracer_purity = [0.01, 0.99]
-$ correct_NA_tracer = True
-$ # isotopic purity of the other isotope used in the IS
-$ purity15N = [0.01, 0.99]
+```python
+> # isotopic tracer
+> tracer = '13C'
+> # resolution of the MS instrument, m/z at which resolution is measured, and type of instrument (see IsoCor documentation for details)
+> resolution = 70000
+> mz_of_resolution = 400
+> resolution_formula_code = 'orbitrap'
+> # options relative to the purity of the isotopic tracer (see IsoCor documentation for details)
+> tracer_purity = [0.01, 0.99]
+> correct_NA_tracer = True
+> # isotopic purity of the other isotope used in the IS
+> purity15N = [0.01, 0.99]
 ```
 
 Then, process your data by running the following command:
 
-```bash
-iq.run(data_folder,
-datafile,
-calibfile,
-tracer,
-resolution,
-mz_of_resolution,
-tracer_purity,
-correct_NA_tracer,
-resolution_formula_code,
-purity15N=purity15N,
-verbose=False)
+```python
+> iq.run(data_folder,
+> datafile,
+> calibfile,
+> tracer,
+> resolution,
+> mz_of_resolution,
+> tracer_purity,
+> correct_NA_tracer,
+> resolution_formula_code,
+> purity15N=purity15N,
+> verbose=False)
 ```
 
 The following information are saved in the data directory:
