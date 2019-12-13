@@ -1,4 +1,4 @@
-# IsoQ - Single-sample metabolomics and isotopic analysis
+# IsoQ - Simultaneous measurement of absolute metabolite concentration and isotope incorporation by mass spectrometry
 
 ## What is IsoQ?
 **IsoQ is a scientific software dedicated to the automated processing of metabolomics and isotopic MS measurements**.
