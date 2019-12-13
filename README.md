@@ -1,4 +1,4 @@
-# IsoQ - Simultaneous measurement of absolute metabolite concentration and isotope incorporation by mass spectrometry
+# IsoQ - Simultaneous measurement of metabolite concentration and isotope incorporation by MS
 
 ## What is IsoQ?
 **IsoQ is a scientific software dedicated to the automated processing of metabolomics and isotopic MS measurements**.
