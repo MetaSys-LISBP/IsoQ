@@ -33,9 +33,9 @@ Alternatively, you can download the github repository and run:
 $ pip install /path/to/IsoQ/
 ```
 
-An example of IsoQ usage is provided below and in `*/isoq/data/example_process.py*`.
-
 ## Usage
+
+An example of IsoQ usage is provided here and in `*/isoq/data/*` with the associated data files.
 
 First, load IsoQ in your Python session (IsoQ must be installed beforehand, as detailed above):
 
